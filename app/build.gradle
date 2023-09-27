@@ -3,15 +3,14 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
-    id 'androidx.navigation.safeargs.kotlin'
 }
 
 android {
-    namespace 'com.app.bustracking'
+    namespace 'com.app.drivertracking'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.app.bustracking"
+        applicationId "com.app.drivertracking"
         minSdk 21
         targetSdk 33
         versionCode 1
@@ -42,11 +41,11 @@ android {
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'androidx.lifecycle:lifecycle-service:2.6.2'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
@@ -54,13 +53,6 @@ dependencies {
     implementation('org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20') {
         exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib'
     }
-
-    //mapbox
-//    implementation("com.mapbox.maps:android:10.15.0")
-//    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-services:6.13.0'
-//    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-geojson:6.13.0'
-//    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-turf:6.13.0'
-//    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-core:6.13.0'
 
     def mapboxMapPluginPrefix    = 'v9'
     def mapboxMapSdk             = '9.7.0'
@@ -88,15 +80,6 @@ dependencies {
     implementation "com.mapbox.mapboxsdk:mapbox-android-plugin-scalebar-${mapboxMapPluginPrefix}:${mapboxPluginScalebar}"
 
 
-//    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-services:4.3.0'
-//    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:6.8.1'
-//    implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-places-v7:0.7.0'
-//    implementation ('com.mapbox.mapboxsdk:mapbox-android-geocoder:1.0.0@aar'){
-//        transitive=true
-//    }
-//    implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-annotation-v7:0.4.0'
-//    implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-markerview-v7:0.2.0'
-
 
     //retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -123,13 +106,11 @@ dependencies {
     annotationProcessor("com.github.bumptech.glide:compiler:4.13.1")
     implementation("jp.wasabeef:glide-transformations:4.3.0")
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+
     //font size
     implementation("com.intuit.ssp:ssp-android:1.0.6")
     implementation("com.intuit.sdp:sdp-android:1.1.0")
 
-    implementation ("com.pixplicity.easyprefs:EasyPrefs:1.10.0")
-    implementation ("com.github.GoodieBag:Pinview:v1.5")
-
-    implementation 'com.hbb20:ccp:2.7.0'
-
+    //pref
+    implementation("com.pixplicity.easyprefs:EasyPrefs:1.10.0")
 }
