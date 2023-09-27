@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Code for drawable -->
+<shape
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <solid android:color="#ffffff" />
+
+    <stroke
+        android:width="@dimen/_2sdp"
+        android:color="#de0064" />
+
+    <corners android:radius="@dimen/_12sdp"/>
+</shape>

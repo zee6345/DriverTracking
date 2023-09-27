@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/getStarted01">
+
+    <fragment
+        android:id="@+id/getStarted01"
+        android:name="com.app.drivertracking.presentation.views.fragments.GetStarted01"
+        android:label="fragment_get_started01"
+        tools:layout="@layout/fragment_get_started01">
+        <action
+            android:id="@+id/action_getStarted01_to_getStarted02"
+            app:destination="@id/getStarted02"
+            app:popUpToInclusive="true"
+            app:popUpTo="@id/nav_graph" />
+    </fragment>
+    <fragment
+        android:id="@+id/getStarted02"
+        android:name="com.app.drivertracking.presentation.views.fragments.GetStarted02"
+        android:label="fragment_get_started02"
+        tools:layout="@layout/fragment_get_started02">
+        <action
+            android:id="@+id/action_getStarted02_to_getStarted03"
+            app:destination="@id/getStarted03"
+            app:popUpToInclusive="true"
+            app:popUpTo="@id/nav_graph" />
+    </fragment>
+    <fragment
+        android:id="@+id/getStarted03"
+        android:name="com.app.drivertracking.presentation.views.fragments.GetStarted03"
+        android:label="fragment_get_started03"
+        tools:layout="@layout/fragment_get_started03">
+        <action
+            android:id="@+id/action_getStarted03_to_auth"
+            app:destination="@id/auth"
+            app:popUpToInclusive="true"
+            app:popUpTo="@id/nav_graph" />
+    </fragment>
+    <fragment
+        android:id="@+id/auth"
+        android:name="com.app.drivertracking.presentation.views.fragments.Auth"
+        android:label="fragment_auth"
+        tools:layout="@layout/fragment_auth">
+        <action
+            android:id="@+id/action_auth_to_home2"
+            app:destination="@id/home2"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/home2"
+        android:name="com.app.drivertracking.presentation.views.fragments.Home"
+        android:label="fragment_home"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_home2_to_driverMap"
+            app:destination="@id/driverMap" />
+        <action
+            android:id="@+id/action_home2_to_auth"
+            app:destination="@id/auth"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/driverMap"
+        android:name="com.app.drivertracking.presentation.views.fragments.MapDriver"
+        android:label="fragment_driver_map"
+        tools:layout="@layout/fragment_driver_map">
+        <action
+            android:id="@+id/action_driverMap_to_driverMapDetails"
+            app:destination="@id/driverMapDetails"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"
+            app:popUpTo="@id/driverMap" />
+    </fragment>
+    <fragment
+        android:id="@+id/driverMapDetails"
+        android:name="com.app.drivertracking.presentation.views.fragments.DriverMapDetails"
+        android:label="fragment_driver_map_details"
+        tools:layout="@layout/fragment_driver_map_details">
+        <action
+            android:id="@+id/action_driverMapDetails_to_passengerDetails"
+            app:destination="@id/passengerDetails"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"
+            app:popUpTo="@id/driverMapDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/passengerDetails"
+        android:name="com.app.drivertracking.presentation.views.fragments.PassengerDetails"
+        android:label="fragment_passenger_details"
+        tools:layout="@layout/fragment_passenger_details">
+        <action
+            android:id="@+id/action_passengerDetails_to_routeFinish"
+            app:destination="@id/routeFinish"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"
+            app:popUpTo="@id/passengerDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/routeFinish"
+        android:name="com.app.drivertracking.presentation.views.fragments.RouteFinish"
+        android:label="fragment_route_finish"
+        tools:layout="@layout/fragment_route_finish" />
+</navigation>
