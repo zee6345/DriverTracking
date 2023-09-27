@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/selectNetwrokFragment">
+
+    <fragment
+        android:id="@+id/selectNetwrokFragment"
+        android:name="com.app.bustracking.presentation.views.fragments.main.SelectNetworkFragment"
+        android:label="fragment_select_netwrok"
+        tools:layout="@layout/fragment_select_netwrok" >
+        <action
+            android:id="@+id/action_selectNetwrokFragment_to_selectRoutesFragment"
+            app:destination="@id/selectRoutesFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/selectRoutesFragment"
+        android:name="com.app.bustracking.presentation.views.fragments.main.SelectRoutesFragment"
+        android:label="fragment_select_routes"
+        tools:layout="@layout/fragment_select_routes" >
+        <action
+            android:id="@+id/action_selectRoutesFragment_to_selectNetwrokFragment"
+            app:popUpTo="@id/selectNetwrokFragment" />
+    </fragment>
+</navigation>
