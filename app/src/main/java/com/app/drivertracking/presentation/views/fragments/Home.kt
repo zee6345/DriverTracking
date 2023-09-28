@@ -19,10 +19,15 @@ import com.app.bustracking.utils.Converter
 import com.app.drivertracking.R
 import com.app.drivertracking.data.cache.AppPreference
 import com.app.drivertracking.data.models.request.ProfileRequest
+import com.app.drivertracking.data.models.request.RouteRequest
+import com.app.drivertracking.data.models.request.StopRequest
 import com.app.drivertracking.data.models.response.DataSate
 import com.app.drivertracking.data.models.response.success.GetDriverAuth
 import com.app.drivertracking.data.models.response.success.GetDriverProfile
+import com.app.drivertracking.data.models.response.success.GetRouteId
+import com.app.drivertracking.data.models.response.success.GetStopsList
 import com.app.drivertracking.databinding.FragmentHomeBinding
+import com.app.drivertracking.presentation.utils.Constants
 import com.app.drivertracking.presentation.utils.Progress
 import com.app.drivertracking.presentation.utils.SharedModel
 import com.app.drivertracking.presentation.viewmodel.AppViewModel
@@ -39,6 +44,7 @@ class Home : BaseFragment() {
     private val data: AppViewModel by viewModels()
     private val sharedModel: SharedModel by viewModels()
     private val profile = MutableLiveData<GetDriverProfile?>(null)
+    private lateinit var auth: GetDriverAuth
 
 
     private val appTimerReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -80,16 +86,17 @@ class Home : BaseFragment() {
         progress = Progress(requireActivity()).showProgress()
 
         // Register the BroadcastReceiver to receive updates from the service
-        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(appTimerReceiver, IntentFilter("app_timer_update"));
+        LocalBroadcastManager.getInstance(requireActivity())
+            .registerReceiver(appTimerReceiver, IntentFilter("app_timer_update"));
 
 
         try {
-            val jsonData = AppPreference.getString("auth")
+            val jsonData = AppPreference.getString(Constants.DRIVER_AUTH.name)
             if (jsonData != null) {
-                val auth = Converter.fromJson(jsonData, GetDriverAuth::class.java)
+                auth = Converter.fromJson(jsonData, GetDriverAuth::class.java)
                 data.driverProfile(ProfileRequest(auth.data.driver_phone!!))
             }
-        }catch (e:Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
         }
 
@@ -114,10 +121,47 @@ class Home : BaseFragment() {
         }
 
         binding.rv01.setOnClickListener {
-            navController.navigate(R.id.action_home2_to_driverMap)
+
+            data.budRouteById(
+                RouteRequest(
+                    auth.data.bus_id!!
+                )
+            )
+
         }
 
         data.driverProfile.observe(viewLifecycleOwner) {
+            when (it) {
+                is DataSate.Loading -> {
+                    progress.show()
+                }
+
+                is DataSate.Error -> {
+                    progress.cancel()
+
+                    Toast.makeText(requireActivity(), "Something went wrong!", Toast.LENGTH_SHORT)
+                        .show()
+                }
+
+                is DataSate.Success -> {
+                    progress.cancel()
+
+                    val data = it.response as GetDriverProfile
+
+                    val jsonData = Converter.toJson(data)
+                    AppPreference.putString(Constants.DRIVER_PROFILE.name, jsonData!!)
+
+
+                    profile.value = data
+                }
+
+                else -> {
+
+                }
+            }
+        }
+
+        data.busRoute.observe(viewLifecycleOwner) {
             when (it) {
                 is DataSate.Loading -> {
                     progress.show()
@@ -134,13 +178,56 @@ class Home : BaseFragment() {
                 is DataSate.Success -> {
                     progress.cancel()
 
-                    val data = it.response as GetDriverProfile
+                    val routes = it.response as GetRouteId
 
-                    val jsonData = Converter.toJson(data)
-                    AppPreference.putString("profile", jsonData!!)
+                    val jsonData = Converter.toJson(routes)
+                    AppPreference.putString(Constants.BUS_ROUTES.name, jsonData!!)
 
 
-                    profile.value = data
+                    //fetch stops list
+                    data.routeStopById(
+                        StopRequest(
+                            routes.bus_route_list.route_id
+                        )
+                    )
+
+
+                }
+
+                else -> {
+
+                }
+            }
+        }
+
+        data.busStops.observe(viewLifecycleOwner) {
+            when (it) {
+                is DataSate.Loading -> {
+                    progress.show()
+                }
+
+                is DataSate.Error -> {
+                    progress.cancel()
+                }
+
+                is DataSate.Success -> {
+                    progress.cancel()
+
+                    val stops = it.response as GetStopsList
+
+                    val jsonData = Converter.toJson(stops)
+                    AppPreference.putString(Constants.BUS_STOPS.name, jsonData!!)
+
+
+                    if (stops.stop_list.isNotEmpty()) {
+                        navController.navigate(R.id.action_home2_to_driverMap)
+                    } else {
+                        Toast.makeText(
+                            requireActivity(),
+                            "no stop available right now!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
 
                 else -> {

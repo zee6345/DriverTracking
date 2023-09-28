@@ -20,6 +20,7 @@ import com.app.drivertracking.data.models.request.DriverAuthRequest
 import com.app.drivertracking.data.models.response.DataSate
 import com.app.drivertracking.data.models.response.success.GetDriverAuth
 import com.app.drivertracking.databinding.FragmentAuthBinding
+import com.app.drivertracking.presentation.utils.Constants
 import com.app.drivertracking.presentation.utils.Progress
 import com.app.drivertracking.presentation.viewmodel.AppViewModel
 
@@ -103,7 +104,7 @@ class Auth : BaseFragment() {
                     val data = it.response as GetDriverAuth
 
                     val jsonData = Converter.toJson(data)
-                    AppPreference.putString("auth", jsonData!!)
+                    AppPreference.putString(Constants.DRIVER_AUTH.name, jsonData!!)
 
                     navController.navigate(R.id.action_auth_to_home2)
                 }

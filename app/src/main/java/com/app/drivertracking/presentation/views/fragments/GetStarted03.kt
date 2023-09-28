@@ -10,6 +10,7 @@ import com.app.drivertracking.R
 import com.app.drivertracking.data.cache.AppPreference
 import com.app.drivertracking.data.models.response.success.GetDriverAuth
 import com.app.drivertracking.databinding.FragmentGetStarted03Binding
+import com.app.drivertracking.presentation.utils.Constants
 
 class GetStarted03 : BaseFragment() {
 
@@ -37,7 +38,7 @@ class GetStarted03 : BaseFragment() {
 
 
             //if already login move to home
-            val jsonData = AppPreference.getString("auth")
+            val jsonData = AppPreference.getString(Constants.DRIVER_AUTH.name)
             if (jsonData.isNotEmpty()) {
 
                 val auth = Converter.fromJson(jsonData, GetDriverAuth::class.java)

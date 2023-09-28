@@ -62,15 +62,15 @@ class DriverMapDetails : BaseFragment() {
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(appTimerReceiver, IntentFilter("app_timer_update"));
 
 
-        dataSource.getDetails()
-
-
-        dataSource.details.observe(viewLifecycleOwner) {
-            binding.rvDetails.setHasFixedSize(true)
-            binding.rvDetails.adapter = DetailAdapter(it) {
-                navController.navigate(R.id.action_driverMapDetails_to_passengerDetails)
-            }
-        }
+//        dataSource.getDetails()
+//
+//
+//        dataSource.details.observe(viewLifecycleOwner) {
+//            binding.rvDetails.setHasFixedSize(true)
+//            binding.rvDetails.adapter = DetailAdapter(it) {
+//                navController.navigate(R.id.action_driverMapDetails_to_passengerDetails)
+//            }
+//        }
 
 
     }
