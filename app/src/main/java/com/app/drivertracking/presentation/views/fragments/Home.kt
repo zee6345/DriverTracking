@@ -15,7 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavController
-import com.app.bustracking.utils.Converter
+import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.R
 import com.app.drivertracking.data.cache.AppPreference
 import com.app.drivertracking.data.models.request.ProfileRequest
@@ -23,9 +23,12 @@ import com.app.drivertracking.data.models.request.RouteRequest
 import com.app.drivertracking.data.models.request.StopRequest
 import com.app.drivertracking.data.models.response.DataSate
 import com.app.drivertracking.data.models.response.success.GetDriverAuth
-import com.app.drivertracking.data.models.response.success.GetDriverProfile
+import com.app.drivertracking.data.models.response.success.GetDriverLogin
+import com.app.drivertracking.data.models.response.success.GetDriverProfileX
 import com.app.drivertracking.data.models.response.success.GetRouteId
+import com.app.drivertracking.data.models.response.success.GetRouteStopList
 import com.app.drivertracking.data.models.response.success.GetStopsList
+import com.app.drivertracking.data.models.response.success.GetTravel
 import com.app.drivertracking.databinding.FragmentHomeBinding
 import com.app.drivertracking.presentation.utils.Constants
 import com.app.drivertracking.presentation.utils.Progress
@@ -43,8 +46,9 @@ class Home : BaseFragment() {
     private lateinit var progress: AlertDialog
     private val data: AppViewModel by viewModels()
     private val sharedModel: SharedModel by viewModels()
-    private val profile = MutableLiveData<GetDriverProfile?>(null)
-    private lateinit var auth: GetDriverAuth
+    private val profile = MutableLiveData<GetDriverProfileX?>(null)
+    private lateinit var auth: GetDriverLogin
+//    private lateinit var driver: GetDriverProfileX
 
 
     private val appTimerReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -84,6 +88,8 @@ class Home : BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         progress = Progress(requireActivity()).showProgress()
+        val loginResponse = AppPreference.getString(Constants.DRIVER_AUTH.name)
+        val login = Converter.fromJson(loginResponse, GetDriverLogin::class.java)
 
         // Register the BroadcastReceiver to receive updates from the service
         LocalBroadcastManager.getInstance(requireActivity())
@@ -93,8 +99,11 @@ class Home : BaseFragment() {
         try {
             val jsonData = AppPreference.getString(Constants.DRIVER_AUTH.name)
             if (jsonData != null) {
-                auth = Converter.fromJson(jsonData, GetDriverAuth::class.java)
-                data.driverProfile(ProfileRequest(auth.data.driver_phone!!))
+                val auth = Converter.fromJson(jsonData, GetDriverLogin::class.java)
+                auth.let {
+                    data.driverProfile(ProfileRequest(it.data.id.toString(), it.data.agency_id.toString()))
+                }
+
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -104,8 +113,8 @@ class Home : BaseFragment() {
 
         profile.observe(viewLifecycleOwner) {
             it?.apply {
-                binding.tvName.text = driver_profile[0].name ?: ""
-                binding.tvVehicle.text = driver_profile[0].matricule ?: ""
+                binding.tvName.text = login.data.name ?: ""
+                binding.tvVehicle.text = data.bus_no ?: ""
             }
         }
 
@@ -124,7 +133,7 @@ class Home : BaseFragment() {
 
             data.budRouteById(
                 RouteRequest(
-                    auth.data.bus_id!!
+                    profile.value!!.data.travel_id.toString()
                 )
             )
 
@@ -146,13 +155,14 @@ class Home : BaseFragment() {
                 is DataSate.Success -> {
                     progress.cancel()
 
-                    val data = it.response as GetDriverProfile
+                    val driver = it.response as GetDriverProfileX
 
-                    val jsonData = Converter.toJson(data)
+
+                    val jsonData = Converter.toJson(driver)
                     AppPreference.putString(Constants.DRIVER_PROFILE.name, jsonData!!)
 
 
-                    profile.value = data
+                    profile.value = driver
                 }
 
                 else -> {
@@ -178,7 +188,7 @@ class Home : BaseFragment() {
                 is DataSate.Success -> {
                     progress.cancel()
 
-                    val routes = it.response as GetRouteId
+                    val routes = it.response as GetTravel
 
                     val jsonData = Converter.toJson(routes)
                     AppPreference.putString(Constants.BUS_ROUTES.name, jsonData!!)
@@ -187,7 +197,7 @@ class Home : BaseFragment() {
                     //fetch stops list
                     data.routeStopById(
                         StopRequest(
-                            routes.bus_route_list.route_id
+                            profile.value!!.data.travel_id
                         )
                     )
 
@@ -213,13 +223,13 @@ class Home : BaseFragment() {
                 is DataSate.Success -> {
                     progress.cancel()
 
-                    val stops = it.response as GetStopsList
+                    val stops = it.response as GetRouteStopList
 
                     val jsonData = Converter.toJson(stops)
                     AppPreference.putString(Constants.BUS_STOPS.name, jsonData!!)
 
 
-                    if (stops.stop_list.isNotEmpty()) {
+                    if (stops.data.stop_list.isNotEmpty()) {
                         navController.navigate(R.id.action_home2_to_driverMap)
                     } else {
                         Toast.makeText(

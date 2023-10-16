@@ -1,11 +1,20 @@
 package com.app.drivertracking.presentation.views.fragments;
 
+import static com.mapbox.mapboxsdk.style.expressions.Expression.get;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textAllowOverlap;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textField;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textIgnorePlacement;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,19 +25,23 @@ import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 
-import com.app.bustracking.utils.Converter;
 import com.app.drivertracking.R;
 import com.app.drivertracking.data.cache.AppPreference;
-import com.app.drivertracking.data.models.response.success.GetStopsList;
-import com.app.drivertracking.data.models.response.success.Stop;
+import com.app.drivertracking.data.models.response.success.GetRouteStopList;
+import com.app.drivertracking.data.models.response.success.StopX;
 import com.app.drivertracking.databinding.FragmentDriverMapBinding;
 import com.app.drivertracking.presentation.utils.Constants;
+import com.app.drivertracking.presentation.utils.Converter;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
 import com.mapbox.mapboxsdk.location.LocationComponentOptions;
@@ -38,6 +51,10 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
+import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
+import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.util.ArrayList;
@@ -48,7 +65,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     private NavController navController;
     private FragmentDriverMapBinding binding;
 
-    private GetStopsList stopsList;
+    private GetRouteStopList stopsList;
     private PermissionsManager permissionsManager;
     private MapboxMap mapboxMap;
     private MapView mapView;
@@ -56,6 +73,14 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     private String ICON_ID = "ICON_ID";
     private String LAYER_ID = "LAYER_ID";
     private List<Feature> symbolLayerIconFeatureList = new ArrayList<>();
+    private List<LatLng> coordinatesList = new ArrayList<>();
+    List<Marker> markers = new ArrayList<>();
+
+
+    double maxLat = -90;
+    double maxLng = -180;
+    double minLat = 90;
+    double minLng = 180;
 
 
     private BroadcastReceiver appTimerReceiver = new BroadcastReceiver() {
@@ -106,66 +131,133 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
         //fetch stops list
         String jsonData = AppPreference.INSTANCE.getString(Constants.BUS_STOPS.name());
-        stopsList = Converter.INSTANCE.fromJson(jsonData, GetStopsList.class);
+        stopsList = Converter.INSTANCE.fromJson(jsonData, GetRouteStopList.class);
 
-        for (Stop stop : stopsList.getStop_list()) {
+        for (StopX stop : stopsList.getData().getStop_list()) {
             symbolLayerIconFeatureList.add(Feature.fromGeometry(Point.fromLngLat(Double.parseDouble(stop.getLng()), Double.parseDouble(stop.getLat()))));
+            coordinatesList.add(new LatLng(Double.parseDouble(stop.getLat()), Double.parseDouble(stop.getLng())));
         }
 
+
+        binding.tvDistance.setText(stopsList.getData().getRoute().getTrip_distance() + " km");
+        binding.tvRouteTitle.setText(stopsList.getData().getRoute().getRoute_title());
+        binding.tvEstTime.setText(stopsList.getData().getRoute().getEstimated_duration());
+
     }
+
 
     @Override
     public void onMapReady(@NonNull final MapboxMap mapboxMap) {
         this.mapboxMap = mapboxMap;
+
         mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
+                /*
+                 *current user location
+                 */
                 enableLocationComponent(style);
+
+                /*
+                 * add markers for stops
+                 */
+                // Create a SymbolLayer for markers
+                style.addImage(ICON_ID, BitmapFactory.decodeResource(
+                        requireActivity().getResources(),
+                        com.mapbox.mapboxsdk.R.drawable.mapbox_marker_icon_default
+                ));
+
+
+                // Add a GeoJson source for markers
+                style.addSource(new GeoJsonSource(SOURCE_ID, FeatureCollection.fromFeatures(symbolLayerIconFeatureList)));
+
+                // Add a SymbolLayer to display markers
+                style.addLayer(new SymbolLayer(LAYER_ID, SOURCE_ID)
+                        .withProperties(
+                                iconImage(ICON_ID),
+                                iconAllowOverlap(true),
+                                iconIgnorePlacement(true)
+                        )
+                );
+
+                /*
+                 *  set titles
+                 */
+//                for (int i = 0; i < coordinatesList.size(); i++) {
+//                    LatLng latLng = coordinatesList.get(i);
+//                    String title = stopsList.getData().getStop_list().get(i).getStop_title(); // Get the corresponding title
+//
+//                    // Create a Feature for the marker with properties, including the title
+//                    Feature feature = Feature.fromGeometry(Point.fromLngLat(latLng.getLongitude(), latLng.getLatitude()));
+//                    feature.addStringProperty("title", title); // Set the title
+//
+//                    symbolLayerIconFeatureList.add(feature);
+//                }
+//
+//                // Assuming you have your map style loaded and assigned to 'style'
+//                // Add a GeoJson source for markers
+//                style.addSource(new GeoJsonSource(SOURCE_ID, FeatureCollection.fromFeatures(symbolLayerIconFeatureList)));
+//
+//                // Add a SymbolLayer to display markers with the title property
+//                style.addLayer(new SymbolLayer(LAYER_ID, SOURCE_ID)
+//                        .withProperties(
+//                                iconImage(ICON_ID),
+//                                iconAllowOverlap(true),
+//                                iconIgnorePlacement(true),
+//                                textField(get("title")), // Set the title
+//                                textIgnorePlacement(true),
+//                                textAllowOverlap(true)
+//                        )
+//                );
+
+
+
+                /*
+                 * move camera to all stops
+                 */
+
+                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                for (LatLng latLng : coordinatesList) {
+                    builder.include(latLng);
+                }
+
+                LatLngBounds bounds = builder.build();
+
+                // Padding to control the space around the bounds (in pixels)
+                int padding = 100;
+                mapboxMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
+
+//                mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
+//                    @Override
+//                    public boolean onMarkerClick(@NonNull Marker marker) {
+//
+//                        navController.navigate(R.id.action_driverMap_to_driverMapDetails);
+//
+//                        return true;
+//                    }
+//                });
+
+
+
+
+            }
+        });
+
+        mapboxMap.addOnMapClickListener(new MapboxMap.OnMapClickListener() {
+            @Override
+            public boolean onMapClick(@NonNull LatLng point) {
+
+                Log.e("mmmTAG", "" + point);
+
+                navController.navigate(R.id.action_driverMap_to_driverMapDetails);
+
+                return true;
             }
         });
 
 
-        try {
-
-
-            mapboxMap.setStyle(
-                    new Style.Builder()
-                            .fromUri("mapbox://styles/mapbox/cjf4m44iw0uza2spb3q0a7s41") // Add the SymbolLayer icon image to the map style
-                            .withImage(
-                                    ICON_ID,
-                                    BitmapFactory.decodeResource(
-                                            requireActivity().getResources(),
-                                            com.mapbox.mapboxsdk.R.drawable.mapbox_marker_icon_default
-                                    )
-                            )
-                            // Adding a GeoJson source for the SymbolLayer icons.
-                            .withSource(
-                                    new GeoJsonSource(
-                                            SOURCE_ID,
-                                            FeatureCollection.fromFeatures(symbolLayerIconFeatureList)
-                                    )
-                            ) // Adding the actual SymbolLayer to the map style. An offset is added that the bottom of the red
-                    // marker icon gets fixed to the coordinate, rather than the middle of the icon being fixed to
-                    // the coordinate point. This is offset is not always needed and is dependent on the image
-                    // that you use for the SymbolLayer icon.
-//                            .withLayer(
-//                                    SymbolLayer(LAYER_ID, SOURCE_ID)
-//                                            .withProperties(
-//                                                    iconImage(ICON_ID),
-//                                                    iconAllowOverlap(true),
-//                                                    iconIgnorePlacement(true)
-//                                            )
-//                            )
-                    , style -> {
-
-                    });
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
+
 
     @SuppressWarnings({"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
@@ -222,7 +314,6 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
             });
         } else {
             Toast.makeText(requireActivity(), "Please allow location permission to use this app!", Toast.LENGTH_LONG).show();
-//            finish();
         }
     }
 

@@ -1,26 +1,22 @@
 package com.app.drivertracking.presentation.views.fragments
 
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
-import com.app.bustracking.utils.Converter
 import com.app.drivertracking.R
 import com.app.drivertracking.data.cache.AppPreference
 import com.app.drivertracking.data.models.request.DriverAuthRequest
 import com.app.drivertracking.data.models.response.DataSate
-import com.app.drivertracking.data.models.response.success.GetDriverAuth
+import com.app.drivertracking.data.models.response.success.GetDriverLogin
 import com.app.drivertracking.databinding.FragmentAuthBinding
 import com.app.drivertracking.presentation.utils.Constants
+import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.presentation.utils.Progress
 import com.app.drivertracking.presentation.viewmodel.AppViewModel
 
@@ -40,7 +36,6 @@ class Auth : BaseFragment() {
     override fun initNavigation(navController: NavController) {
         this.navController = navController
     }
-
 
 
     override fun onCreateView(
@@ -63,24 +58,10 @@ class Auth : BaseFragment() {
 
         binding.buttonLogin.setOnClickListener {
             val busNumber = binding.etBusNumber.text.toString()
-            val numberPlate = binding.etNumberPlate.text.toString()
-            val busPin = binding.etPswd.text.toString()
-
             if (busNumber.isNotEmpty()) {
-                if (numberPlate.isNotEmpty()) {
-                    if (busPin.isNotEmpty()) {
-
-                        auth.driverAuth(DriverAuthRequest(busNumber, numberPlate, busPin))
-
-                    } else {
-                        showError()
-                    }
-                } else {
-                    showError()
-                }
+                auth.driverAuth(DriverAuthRequest(busNumber))
             } else {
                 showError()
-//                binding.etBusNumber.error = ""
             }
         }
 
@@ -92,8 +73,6 @@ class Auth : BaseFragment() {
 
                 is DataSate.Error -> {
                     progress.cancel()
-                    Log.e(TAG, "onViewCreated: ${it.error}")
-
                     Toast.makeText(requireActivity(), "Something went wrong!", Toast.LENGTH_SHORT)
                         .show()
                 }
@@ -101,12 +80,14 @@ class Auth : BaseFragment() {
                 is DataSate.Success -> {
                     progress.cancel()
 
-                    val data = it.response as GetDriverAuth
-
-                    val jsonData = Converter.toJson(data)
-                    AppPreference.putString(Constants.DRIVER_AUTH.name, jsonData!!)
-
-                    navController.navigate(R.id.action_auth_to_home2)
+                    val data = it.response as GetDriverLogin
+                    if (data.flag == "false") {
+                        showError("Invalid credentials!")
+                    } else {
+                        val jsonData = Converter.toJson(data)
+                        AppPreference.putString(Constants.DRIVER_AUTH.name, jsonData!!)
+                        navController.navigate(R.id.action_auth_to_home2)
+                    }
                 }
 
                 else -> {
@@ -132,6 +113,11 @@ class Auth : BaseFragment() {
     private fun showError() {
 //        string.isEmpty()?:
         Toast.makeText(requireActivity(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showError(str: String) {
+//        string.isEmpty()?:
+        Toast.makeText(requireActivity(), str, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() {

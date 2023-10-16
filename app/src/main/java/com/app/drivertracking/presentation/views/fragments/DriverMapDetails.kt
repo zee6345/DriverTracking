@@ -12,8 +12,12 @@ import androidx.fragment.app.viewModels
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavController
 import com.app.drivertracking.R
+import com.app.drivertracking.data.cache.AppPreference.getString
+import com.app.drivertracking.data.models.response.success.GetRouteStopList
 import com.app.drivertracking.databinding.FragmentDriverMapDetailsBinding
 import com.app.drivertracking.presentation.ui.DetailAdapter
+import com.app.drivertracking.presentation.utils.Constants
+import com.app.drivertracking.presentation.utils.Converter.fromJson
 import com.app.drivertracking.presentation.viewmodel.AppViewModel
 
 
@@ -61,23 +65,28 @@ class DriverMapDetails : BaseFragment() {
         // Register the BroadcastReceiver to receive updates from the service
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(appTimerReceiver, IntentFilter("app_timer_update"));
 
+        //fetch stops list
+        val jsonData = getString(Constants.BUS_STOPS.name)
+        val stopsList = fromJson(
+            jsonData,
+            GetRouteStopList::class.java
+        )
 
-//        dataSource.getDetails()
-//
-//
-//        dataSource.details.observe(viewLifecycleOwner) {
-//            binding.rvDetails.setHasFixedSize(true)
-//            binding.rvDetails.adapter = DetailAdapter(it) {
-//                navController.navigate(R.id.action_driverMapDetails_to_passengerDetails)
-//            }
-//        }
+        binding.tvDistance.text = stopsList.data.route.trip_distance + " Km"
+        binding.tvEstTime.text = stopsList.data.route.estimated_duration ?: ""
+        binding.tvRouteTitle.text = stopsList.data.route.route_title ?: ""
+
+        val detailAdapter = DetailAdapter(stopsList.data.stop_list) {
+            navController.navigate(R.id.action_driverMapDetails_to_passengerDetails)
+        }
+
+        binding.rvDetails.setHasFixedSize(true)
+        binding.rvDetails.adapter = detailAdapter
 
 
     }
 
     override fun onDestroy() {
-
-//        data.driverProfile.removeObservers(viewLifecycleOwner)
 
         // Unregister the BroadcastReceiver when it's no longer needed
         LocalBroadcastManager.getInstance(requireActivity()).unregisterReceiver(appTimerReceiver);

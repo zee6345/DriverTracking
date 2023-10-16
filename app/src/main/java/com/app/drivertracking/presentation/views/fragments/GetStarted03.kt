@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.NavController
-import com.app.bustracking.utils.Converter
+import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.R
 import com.app.drivertracking.data.cache.AppPreference
 import com.app.drivertracking.data.models.response.success.GetDriverAuth

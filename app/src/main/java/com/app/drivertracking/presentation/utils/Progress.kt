@@ -21,6 +21,7 @@ class Progress(val context: Context) {
         val alert = AlertDialog.Builder(context)
         alert.setView(binding.root)
         _dialog = alert.create()
+        _dialog.setCancelable(false)
         _dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         return _dialog
     }

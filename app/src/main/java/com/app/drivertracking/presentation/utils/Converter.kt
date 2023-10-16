@@ -1,4 +1,4 @@
-package com.app.bustracking.utils
+package com.app.drivertracking.presentation.utils
 
 import com.google.gson.Gson
 

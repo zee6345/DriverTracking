@@ -3,12 +3,13 @@ package com.app.drivertracking.presentation.ui
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.app.drivertracking.data.models.response.success.StopX
 import com.app.drivertracking.databinding.ItemDetailsBinding
 import com.app.drivertracking.presentation.model.DriverDetail
 
 class DetailAdapter(
-    private val driverList: List<DriverDetail>,
-    private val onItemClick: (DriverDetail) -> Unit
+    private val driverList: List<StopX>,
+    private val onItemClick: (StopX) -> Unit
 ) :
     RecyclerView.Adapter<DetailAdapter.ViewHolder>() {
 
@@ -20,10 +21,10 @@ class DetailAdapter(
             binding = _binding
         }
 
-        fun bind(driverDetail: DriverDetail, onItemClick: (DriverDetail) -> Unit) {
-            binding.tvTime.text = driverDetail.time
-            binding.tvDriver.text = driverDetail.driver
-            binding.tvRoute.text = driverDetail.route
+        fun bind(driverDetail: StopX, onItemClick: (StopX) -> Unit) {
+            binding.tvTime.text = driverDetail.stop_time
+            binding.tvDriver.text = driverDetail.stop_title
+            binding.tvRoute.text = driverDetail.direction
 
             binding.root.setOnClickListener {
                 onItemClick(driverDetail)
