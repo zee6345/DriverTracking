@@ -2,6 +2,8 @@ package com.app.drivertracking.data.cache
 
 import android.content.Context
 import android.content.ContextWrapper
+import com.app.drivertracking.data.models.BusModel
+import com.google.gson.Gson
 import com.pixplicity.easyprefs.library.Prefs
 
 object AppPreference {
@@ -49,5 +51,22 @@ object AppPreference {
 
     fun clear(){
         Prefs.clear()
+    }
+
+    fun getBusDetails():BusModel?{
+        val dataModel = Prefs.getString("BusDetails","")
+        return if (dataModel.isNotEmpty()){
+            val gson = Gson()
+            val savedUserProfile = gson.fromJson(dataModel, BusModel::class.java)
+            savedUserProfile
+        }else{
+            null
+        }
+    }
+
+    fun setBusDetails(valueBody: BusModel){
+        val gson = Gson()
+        val userProfileJson = gson.toJson(valueBody)
+        Prefs.putString("BusDetails",userProfileJson)
     }
 }

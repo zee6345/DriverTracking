@@ -7,7 +7,8 @@ import com.mapbox.mapboxsdk.Mapbox
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class DriverTracking:Application() {
+class
+DriverTracking:Application() {
 
     override fun onCreate() {
         super.onCreate()

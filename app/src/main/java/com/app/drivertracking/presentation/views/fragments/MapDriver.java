@@ -8,11 +8,14 @@ import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textAllowOverlap
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textField;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textIgnorePlacement;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -25,8 +28,11 @@ import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 
+import com.app.drivertracking.BuildConfig;
 import com.app.drivertracking.R;
+import com.app.drivertracking.app.LocationUpdateService;
 import com.app.drivertracking.data.cache.AppPreference;
+import com.app.drivertracking.data.models.BusModel;
 import com.app.drivertracking.data.models.response.success.GetRouteStopList;
 import com.app.drivertracking.data.models.response.success.StopX;
 import com.app.drivertracking.databinding.FragmentDriverMapBinding;
@@ -34,8 +40,13 @@ import com.app.drivertracking.presentation.utils.Constants;
 import com.app.drivertracking.presentation.utils.Converter;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.api.directions.v5.DirectionsCriteria;
+import com.mapbox.api.directions.v5.MapboxDirections;
+import com.mapbox.api.directions.v5.models.DirectionsResponse;
+import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Marker;
@@ -54,11 +65,18 @@ import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
 import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions;
+import com.mapbox.mapboxsdk.style.layers.LineLayer;
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MapDriver extends BaseFragment implements OnMapReadyCallback, PermissionsListener {
 
@@ -104,6 +122,13 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         }
     };
 
+    Context context;
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        this.context = context;
+    }
+
     @Override
     public void initNavigation(@NonNull NavController navController) {
         this.navController = navController;
@@ -127,7 +152,8 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
 
         binding.mapBoxView.getMapAsync(this);
-
+        mapView = binding.mapBoxView;
+        mapView.onCreate(savedInstanceState);
 
         //fetch stops list
         String jsonData = AppPreference.INSTANCE.getString(Constants.BUS_STOPS.name());
@@ -143,6 +169,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         binding.tvRouteTitle.setText(stopsList.getData().getRoute().getRoute_title());
         binding.tvEstTime.setText(stopsList.getData().getRoute().getEstimated_duration());
 
+
     }
 
 
@@ -153,24 +180,25 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
-                /*
-                 *current user location
-                 */
+
                 enableLocationComponent(style);
 
-                /*
-                 * add markers for stops
-                 */
-                // Create a SymbolLayer for markers
                 style.addImage(ICON_ID, BitmapFactory.decodeResource(
                         requireActivity().getResources(),
                         com.mapbox.mapboxsdk.R.drawable.mapbox_marker_icon_default
                 ));
 
+                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+                for (LatLng latLng : coordinatesList) {
+                    builder.include(latLng);
+                }
+                List<Point> pointsList = new ArrayList<>();
+                for (LatLng latLng : coordinatesList) {
+                    pointsList.add(Point.fromLngLat(latLng.getLongitude(), latLng.getLatitude()));
+                }
 
                 // Add a GeoJson source for markers
                 style.addSource(new GeoJsonSource(SOURCE_ID, FeatureCollection.fromFeatures(symbolLayerIconFeatureList)));
-
                 // Add a SymbolLayer to display markers
                 style.addLayer(new SymbolLayer(LAYER_ID, SOURCE_ID)
                         .withProperties(
@@ -180,64 +208,46 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
                         )
                 );
 
-                /*
-                 *  set titles
-                 */
-//                for (int i = 0; i < coordinatesList.size(); i++) {
-//                    LatLng latLng = coordinatesList.get(i);
-//                    String title = stopsList.getData().getStop_list().get(i).getStop_title(); // Get the corresponding title
-//
-//                    // Create a Feature for the marker with properties, including the title
-//                    Feature feature = Feature.fromGeometry(Point.fromLngLat(latLng.getLongitude(), latLng.getLatitude()));
-//                    feature.addStringProperty("title", title); // Set the title
-//
-//                    symbolLayerIconFeatureList.add(feature);
-//                }
-//
-//                // Assuming you have your map style loaded and assigned to 'style'
-//                // Add a GeoJson source for markers
-//                style.addSource(new GeoJsonSource(SOURCE_ID, FeatureCollection.fromFeatures(symbolLayerIconFeatureList)));
-//
-//                // Add a SymbolLayer to display markers with the title property
-//                style.addLayer(new SymbolLayer(LAYER_ID, SOURCE_ID)
-//                        .withProperties(
-//                                iconImage(ICON_ID),
-//                                iconAllowOverlap(true),
-//                                iconIgnorePlacement(true),
-//                                textField(get("title")), // Set the title
-//                                textIgnorePlacement(true),
-//                                textAllowOverlap(true)
-//                        )
-//                );
+                // Use Mapbox Directions API to create a route
+                MapboxDirections directionsClient = MapboxDirections.builder()
+                        .origin(Point.fromLngLat(pointsList.get(0).longitude(), pointsList.get(0).latitude()))
+                        .destination(Point.fromLngLat(pointsList.get(pointsList.size() - 1).longitude(), pointsList.get(pointsList.size() - 1).latitude()))
+                        .waypoints(pointsList.subList(1, pointsList.size() - 1))
+                        .accessToken(getString(R.string.mapbox_access_token))
+                        .overview("full")
+                        .profile("driving-traffic")
+                        .steps(true)
+                        .build();
 
+                // Draw the route on the map
+                directionsClient.enqueueCall(new Callback<DirectionsResponse>() {
+                    @SuppressLint("MissingPermission")
+                    @Override
+                    public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+                        if (response.body() != null && !response.body().routes().isEmpty()) {
+                            DirectionsRoute route = response.body().routes().get(0);
+                            drawRouteOnMap(style, route);
+//
+                            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+                            locationComponent.activateLocationComponent(requireActivity(), style);
+                            locationComponent.setLocationComponentEnabled(true);
+                            locationComponent.setCameraMode(CameraMode.TRACKING);
+                            locationComponent.setRenderMode(RenderMode.NORMAL);
+                        }
+                    }
 
+                    @Override
+                    public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
+                       throwable.printStackTrace();
+                    }
+                });
 
-                /*
-                 * move camera to all stops
-                 */
-
-                LatLngBounds.Builder builder = new LatLngBounds.Builder();
-                for (LatLng latLng : coordinatesList) {
-                    builder.include(latLng);
-                }
 
                 LatLngBounds bounds = builder.build();
 
                 // Padding to control the space around the bounds (in pixels)
                 int padding = 100;
                 mapboxMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
-
-//                mapboxMap.setOnMarkerClickListener(new MapboxMap.OnMarkerClickListener() {
-//                    @Override
-//                    public boolean onMarkerClick(@NonNull Marker marker) {
-//
-//                        navController.navigate(R.id.action_driverMap_to_driverMapDetails);
-//
-//                        return true;
-//                    }
-//                });
-
-
 
 
             }
@@ -258,6 +268,28 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
     }
 
+
+    private void drawRouteOnMap(@NonNull Style style, DirectionsRoute route) {
+        LineString lineString = LineString.fromPolyline(route.geometry(), 6);
+
+        List<Point> points = lineString.coordinates();
+        List<LatLng> latLngs = new ArrayList<>();
+
+        for (Point point : points) {
+            latLngs.add(new LatLng(point.latitude(), point.longitude()));
+        }
+
+        GeoJsonSource geoJsonSource = new GeoJsonSource("route-source", FeatureCollection.fromFeatures(new Feature[]{
+                Feature.fromGeometry(LineString.fromLngLats(points))
+        }));
+
+        style.addSource(geoJsonSource);
+
+        style.addLayer(new LineLayer("route-layer", "route-source").withProperties(
+                PropertyFactory.lineColor(Color.RED),
+                PropertyFactory.lineWidth(5f)
+        ));
+    }
 
     @SuppressWarnings({"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
@@ -280,18 +312,58 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
                             .build());
 
             // Enable to make component visible
-            locationComponent.setLocationComponentEnabled(true);
+          //  locationComponent.setLocationComponentEnabled(true);
+
+
 
             // Set the component's camera mode
             locationComponent.setCameraMode(CameraMode.TRACKING);
 
             // Set the component's render mode
             locationComponent.setRenderMode(RenderMode.NORMAL);
+
+
+
+
+            Intent serviceIntent = new Intent(context, LocationUpdateService.class);
+            serviceIntent.putExtra("track", "");
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                context.startForegroundService(serviceIntent);
+//            } else {
+                context.startService(serviceIntent);
+//            }
+
+
         } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(requireActivity());
         }
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mapView.onDestroy();
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

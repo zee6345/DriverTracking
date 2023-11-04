@@ -15,22 +15,20 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavController
-import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.R
 import com.app.drivertracking.data.cache.AppPreference
+import com.app.drivertracking.data.models.BusModel
 import com.app.drivertracking.data.models.request.ProfileRequest
 import com.app.drivertracking.data.models.request.RouteRequest
 import com.app.drivertracking.data.models.request.StopRequest
 import com.app.drivertracking.data.models.response.DataSate
-import com.app.drivertracking.data.models.response.success.GetDriverAuth
 import com.app.drivertracking.data.models.response.success.GetDriverLogin
 import com.app.drivertracking.data.models.response.success.GetDriverProfileX
-import com.app.drivertracking.data.models.response.success.GetRouteId
 import com.app.drivertracking.data.models.response.success.GetRouteStopList
-import com.app.drivertracking.data.models.response.success.GetStopsList
 import com.app.drivertracking.data.models.response.success.GetTravel
 import com.app.drivertracking.databinding.FragmentHomeBinding
 import com.app.drivertracking.presentation.utils.Constants
+import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.presentation.utils.Progress
 import com.app.drivertracking.presentation.utils.SharedModel
 import com.app.drivertracking.presentation.viewmodel.AppViewModel
@@ -101,7 +99,12 @@ class Home : BaseFragment() {
             if (jsonData != null) {
                 val auth = Converter.fromJson(jsonData, GetDriverLogin::class.java)
                 auth.let {
-                    data.driverProfile(ProfileRequest(it.data.id.toString(), it.data.agency_id.toString()))
+                    data.driverProfile(
+                        ProfileRequest(
+                            it.data.id.toString(),
+                            it.data.agency_id.toString()
+                        )
+                    )
                 }
 
             }
@@ -228,6 +231,9 @@ class Home : BaseFragment() {
                     val jsonData = Converter.toJson(stops)
                     AppPreference.putString(Constants.BUS_STOPS.name, jsonData!!)
 
+//                    val abc = BusModel(
+//                        bus_id = stops.data.route.bus_id
+//                    )
 
                     if (stops.data.stop_list.isNotEmpty()) {
                         navController.navigate(R.id.action_home2_to_driverMap)
