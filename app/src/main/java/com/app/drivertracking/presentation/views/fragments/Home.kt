@@ -37,17 +37,18 @@ import com.app.drivertracking.presentation.viewmodel.AppViewModel
 private val TAG = Home::class.simpleName.toString()
 
 
+
 class Home : BaseFragment() {
 
     private lateinit var navController: NavController
     private lateinit var binding: FragmentHomeBinding
     private lateinit var progress: AlertDialog
     private val data: AppViewModel by viewModels()
-    private val sharedModel: SharedModel by viewModels()
     private val profile = MutableLiveData<GetDriverProfileX?>(null)
-    private lateinit var auth: GetDriverLogin
-//    private lateinit var driver: GetDriverProfileX
 
+    companion object{
+        var isAlreadyRoute = false
+    }
 
     private val appTimerReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -122,9 +123,9 @@ class Home : BaseFragment() {
         }
 
 
-        SharedModel().appTimer.observe(viewLifecycleOwner) {
-            binding.tvTimer.text = it
-        }
+//        SharedModel().appTimer.observe(viewLifecycleOwner) {
+//            binding.tvTimer.text = it
+//        }
 
 
         binding.tvLogout.setOnClickListener {
@@ -139,6 +140,9 @@ class Home : BaseFragment() {
                     profile.value!!.data.travel_id.toString()
                 )
             )
+
+            //enable route
+            isAlreadyRoute = false
 
         }
 
@@ -236,7 +240,9 @@ class Home : BaseFragment() {
 //                    )
 
                     if (stops.data.stop_list.isNotEmpty()) {
-                        navController.navigate(R.id.action_home2_to_driverMap)
+                        if (!isAlreadyRoute) {
+                            navController.navigate(R.id.action_home2_to_driverMap)
+                        }
                     } else {
                         Toast.makeText(
                             requireActivity(),
@@ -253,9 +259,17 @@ class Home : BaseFragment() {
         }
     }
 
+    override fun onDestroyView() {
+
+        data.driverProfile.removeObservers(viewLifecycleOwner)
+        data.busRoute.removeObservers(viewLifecycleOwner)
+        data.busStops.removeObservers(viewLifecycleOwner)
+
+        super.onDestroyView()
+    }
+
     override fun onDestroy() {
 
-//        data.driverProfile.removeObservers(viewLifecycleOwner)
 
         // Unregister the BroadcastReceiver when it's no longer needed
         LocalBroadcastManager.getInstance(requireActivity()).unregisterReceiver(appTimerReceiver);

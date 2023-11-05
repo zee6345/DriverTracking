@@ -64,7 +64,7 @@ class AppService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
-    private lateinit var locationViewModel: LocationViewModel
+//    private lateinit var locationViewModel: LocationViewModel
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationAvailability(p0: LocationAvailability) {
@@ -112,6 +112,12 @@ class AppService : Service() {
         super.onCreate()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        locationRequest = LocationRequest.create().apply {
+            interval = 20000 // 20 seconds
+            fastestInterval = 20000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
 
 
         val notificationIntent = Intent(this, MainActivity::class.java)

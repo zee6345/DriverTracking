@@ -1,11 +1,11 @@
 package com.app.drivertracking.presentation.ui
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.app.drivertracking.data.models.response.success.StopX
 import com.app.drivertracking.databinding.ItemDetailsBinding
-import com.app.drivertracking.presentation.model.DriverDetail
 
 class DetailAdapter(
     private val driverList: List<StopX>,
@@ -22,6 +22,11 @@ class DetailAdapter(
         }
 
         fun bind(driverDetail: StopX, onItemClick: (StopX) -> Unit) {
+
+            binding.tvTime.visibility =
+                if (driverDetail.stop_time.isEmpty()) View.GONE else View.VISIBLE
+
+
             binding.tvTime.text = driverDetail.stop_time
             binding.tvDriver.text = driverDetail.stop_title
             binding.tvRoute.text = driverDetail.direction
@@ -43,7 +48,7 @@ class DetailAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(driverList[position]){
+        holder.bind(driverList[position]) {
             onItemClick(it)
         }
 

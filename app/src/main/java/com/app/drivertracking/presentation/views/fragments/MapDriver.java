@@ -1,12 +1,8 @@
 package com.app.drivertracking.presentation.views.fragments;
 
-import static com.mapbox.mapboxsdk.style.expressions.Expression.get;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textAllowOverlap;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textField;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textIgnorePlacement;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -15,7 +11,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -28,11 +23,9 @@ import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 
-import com.app.drivertracking.BuildConfig;
 import com.app.drivertracking.R;
 import com.app.drivertracking.app.LocationUpdateService;
 import com.app.drivertracking.data.cache.AppPreference;
-import com.app.drivertracking.data.models.BusModel;
 import com.app.drivertracking.data.models.response.success.GetRouteStopList;
 import com.app.drivertracking.data.models.response.success.StopX;
 import com.app.drivertracking.databinding.FragmentDriverMapBinding;
@@ -40,7 +33,6 @@ import com.app.drivertracking.presentation.utils.Constants;
 import com.app.drivertracking.presentation.utils.Converter;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
-import com.mapbox.api.directions.v5.DirectionsCriteria;
 import com.mapbox.api.directions.v5.MapboxDirections;
 import com.mapbox.api.directions.v5.models.DirectionsResponse;
 import com.mapbox.api.directions.v5.models.DirectionsRoute;
@@ -62,16 +54,12 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
-import com.mapbox.mapboxsdk.plugins.annotation.OnSymbolClickListener;
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions;
 import com.mapbox.mapboxsdk.style.layers.LineLayer;
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import retrofit2.Call;
@@ -123,6 +111,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     };
 
     Context context;
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -144,6 +133,11 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        //block rerouting
+        Home.Companion.setAlreadyRoute(true);
+
+        //
 
         // Register the BroadcastReceiver to receive updates from the service
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(appTimerReceiver, new IntentFilter("app_timer_update"));
@@ -168,6 +162,10 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         binding.tvDistance.setText(stopsList.getData().getRoute().getTrip_distance() + " km");
         binding.tvRouteTitle.setText(stopsList.getData().getRoute().getRoute_title());
         binding.tvEstTime.setText(stopsList.getData().getRoute().getEstimated_duration());
+
+        binding.tvRouteTitle.setOnClickListener(v -> {
+            navController.navigate(R.id.action_driverMap_to_driverMapDetails);
+        });
 
 
     }
@@ -226,6 +224,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
                         if (response.body() != null && !response.body().routes().isEmpty()) {
                             DirectionsRoute route = response.body().routes().get(0);
+
                             drawRouteOnMap(style, route);
 //
                             LocationComponent locationComponent = mapboxMap.getLocationComponent();
@@ -238,7 +237,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
                     @Override
                     public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
-                       throwable.printStackTrace();
+                        throwable.printStackTrace();
                     }
                 });
 
@@ -253,16 +252,18 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
             }
         });
 
-        mapboxMap.addOnMapClickListener(new MapboxMap.OnMapClickListener() {
-            @Override
-            public boolean onMapClick(@NonNull LatLng point) {
+        mapboxMap.addOnMapClickListener(point -> {
 
-                Log.e("mmmTAG", "" + point);
+            Log.e("mmmTAG", "" + point);
 
-                navController.navigate(R.id.action_driverMap_to_driverMapDetails);
+            LatLngBounds latLngBounds = new LatLngBounds.Builder()
+                    .include(coordinatesList.get(0)) // Northeast
+                    .include(coordinatesList.get(coordinatesList.size() - 1)) // Southwest
+                    .build();
 
-                return true;
-            }
+            mapboxMap.easeCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, 50), 5000);
+
+            return true;
         });
 
 
@@ -300,7 +301,11 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
             // the `.pulseEnabled()` method
             LocationComponentOptions customLocationComponentOptions = LocationComponentOptions.builder(requireActivity())
                     .pulseEnabled(true)
+
                     .build();
+
+            //add custom icon
+            loadedMapStyle.addImage("custom-marker-icon", BitmapFactory.decodeResource(getResources(), R.drawable.abc));
 
             // Get an instance of the component
             LocationComponent locationComponent = mapboxMap.getLocationComponent();
@@ -312,8 +317,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
                             .build());
 
             // Enable to make component visible
-          //  locationComponent.setLocationComponentEnabled(true);
-
+            locationComponent.setLocationComponentEnabled(true);
 
 
             // Set the component's camera mode
@@ -323,15 +327,9 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
             locationComponent.setRenderMode(RenderMode.NORMAL);
 
 
-
-
             Intent serviceIntent = new Intent(context, LocationUpdateService.class);
             serviceIntent.putExtra("track", "");
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                context.startForegroundService(serviceIntent);
-//            } else {
-                context.startService(serviceIntent);
-//            }
+            context.startService(serviceIntent);
 
 
         } else {
@@ -352,11 +350,11 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         mapView.onPause();
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mapView.onDestroy();
-    }
+//    @Override
+//    public void onDestroyView() {
+//        super.onDestroyView();
+//        mapView.onDestroy();
+//    }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -378,12 +376,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     @Override
     public void onPermissionResult(boolean granted) {
         if (granted) {
-            mapboxMap.getStyle(new Style.OnStyleLoaded() {
-                @Override
-                public void onStyleLoaded(@NonNull Style style) {
-                    enableLocationComponent(style);
-                }
-            });
+            mapboxMap.getStyle(style -> enableLocationComponent(style));
         } else {
             Toast.makeText(requireActivity(), "Please allow location permission to use this app!", Toast.LENGTH_LONG).show();
         }

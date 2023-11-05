@@ -76,8 +76,12 @@ class DriverMapDetails : BaseFragment() {
         binding.tvEstTime.text = stopsList.data.route.estimated_duration ?: ""
         binding.tvRouteTitle.text = stopsList.data.route.route_title ?: ""
 
-        val detailAdapter = DetailAdapter(stopsList.data.stop_list) {
+        binding.tvRouteTitle.setOnClickListener {
             navController.navigate(R.id.action_driverMapDetails_to_passengerDetails)
+        }
+
+        val detailAdapter = DetailAdapter(stopsList.data.stop_list) {
+//            navController.navigate(R.id.action_driverMapDetails_to_passengerDetails)
         }
 
         binding.rvDetails.setHasFixedSize(true)
