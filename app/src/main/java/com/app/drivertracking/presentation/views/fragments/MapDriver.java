@@ -227,11 +227,13 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
                             drawRouteOnMap(style, route);
 //
-                            LocationComponent locationComponent = mapboxMap.getLocationComponent();
-                            locationComponent.activateLocationComponent(requireActivity(), style);
-                            locationComponent.setLocationComponentEnabled(true);
-                            locationComponent.setCameraMode(CameraMode.TRACKING);
-                            locationComponent.setRenderMode(RenderMode.NORMAL);
+                            initLocationService(style);
+
+//                            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+//                            locationComponent.activateLocationComponent(requireActivity(), style);
+//                            locationComponent.setLocationComponentEnabled(true);
+//                            locationComponent.setCameraMode(CameraMode.TRACKING);
+//                            locationComponent.setRenderMode(RenderMode.NORMAL);
                         }
                     }
 
@@ -297,34 +299,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         // Check if permissions are enabled and if not request
         if (PermissionsManager.areLocationPermissionsGranted(requireActivity())) {
 
-            // Enable the most basic pulsing styling by ONLY using
-            // the `.pulseEnabled()` method
-            LocationComponentOptions customLocationComponentOptions = LocationComponentOptions.builder(requireActivity())
-                    .pulseEnabled(true)
-
-                    .build();
-
-            //add custom icon
-            loadedMapStyle.addImage("custom-marker-icon", BitmapFactory.decodeResource(getResources(), R.drawable.abc));
-
-            // Get an instance of the component
-            LocationComponent locationComponent = mapboxMap.getLocationComponent();
-
-            // Activate with options
-            locationComponent.activateLocationComponent(
-                    LocationComponentActivationOptions.builder(requireActivity(), loadedMapStyle)
-                            .locationComponentOptions(customLocationComponentOptions)
-                            .build());
-
-            // Enable to make component visible
-            locationComponent.setLocationComponentEnabled(true);
-
-
-            // Set the component's camera mode
-            locationComponent.setCameraMode(CameraMode.TRACKING);
-
-            // Set the component's render mode
-            locationComponent.setRenderMode(RenderMode.NORMAL);
+            initLocationService(loadedMapStyle);
 
 
             Intent serviceIntent = new Intent(context, LocationUpdateService.class);
@@ -336,6 +311,33 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(requireActivity());
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void initLocationService(Style loadedMapStyle){
+        LocationComponentOptions customLocationComponentOptions = LocationComponentOptions.builder(requireActivity())
+//                    .pulseEnabled(true)
+                .foregroundDrawable(R.drawable.abc)
+                .build();
+
+        //add custom icon
+//            loadedMapStyle.addImage("custom-marker-icon", BitmapFactory.decodeResource(getResources(), R.drawable.abc));
+
+        // Get an instance of the component
+        LocationComponent locationComponent = mapboxMap.getLocationComponent();
+
+        // Activate with options
+        locationComponent.activateLocationComponent(
+                LocationComponentActivationOptions.builder(requireActivity(), loadedMapStyle)
+                        .locationComponentOptions(customLocationComponentOptions)
+                        .build());
+
+        // Enable to make component visible
+//        locationComponent.activateLocationComponent(requireActivity(), loadedMapStyle);
+        locationComponent.setLocationComponentEnabled(true);
+        locationComponent.setCameraMode(CameraMode.TRACKING);
+        locationComponent.setRenderMode(RenderMode.NORMAL);
+
     }
 
     @Override
