@@ -31,6 +31,7 @@ import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.presentation.utils.LocationService
 import com.app.drivertracking.presentation.utils.Network
 import com.app.drivertracking.presentation.views.activities.MainActivity
+import com.app.drivertracking.presentation.views.fragments.MapDriver
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
@@ -80,6 +81,8 @@ class AppService : Service() {
 
 
                 callAPI(location)
+
+
 
             }
 
@@ -186,8 +189,9 @@ class AppService : Service() {
 
                 // Replace this with your API call to send the location to the server
                 // Example: sendLocationToAPI(location.latitude, location.longitude)
-
                 callAPI(location)
+
+                //
             }
         }
 
@@ -212,6 +216,11 @@ class AppService : Service() {
     private fun callAPI(location: Location) {
 
         if (Network.isNetworkConnected(this)) {
+
+            //proximity
+            MapDriver.checkProximityToStops(location)
+
+
 
             val apiServices = ApiClient.createService().create(ApiService::class.java)
 

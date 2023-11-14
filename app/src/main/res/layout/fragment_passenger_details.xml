@@ -43,7 +43,8 @@
                 android:textAlignment="center"
                 android:textColor="@color/white"
                 android:id="@+id/tvHeaderTitle"
-                android:textSize="@dimen/_16sdp"
+                android:ellipsize="marquee"
+                android:textSize="@dimen/_14sdp"
                 android:textStyle="bold" />
 
             <ImageView

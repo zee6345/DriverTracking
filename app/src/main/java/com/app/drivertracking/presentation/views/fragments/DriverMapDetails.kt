@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,7 +64,8 @@ class DriverMapDetails : BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // Register the BroadcastReceiver to receive updates from the service
-        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(appTimerReceiver, IntentFilter("app_timer_update"));
+        LocalBroadcastManager.getInstance(requireActivity())
+            .registerReceiver(appTimerReceiver, IntentFilter("app_timer_update"));
 
         //fetch stops list
         val jsonData = getString(Constants.BUS_STOPS.name)
@@ -89,6 +91,7 @@ class DriverMapDetails : BaseFragment() {
 
 
     }
+
 
     override fun onDestroy() {
 

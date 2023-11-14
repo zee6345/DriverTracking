@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -41,7 +42,6 @@ import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
-import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
@@ -70,8 +70,9 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
     private NavController navController;
     private FragmentDriverMapBinding binding;
+    public static FragmentDriverMapBinding _binding;
 
-    private GetRouteStopList stopsList;
+    public static GetRouteStopList stopsList;
     private PermissionsManager permissionsManager;
     private MapboxMap mapboxMap;
     private MapView mapView;
@@ -80,13 +81,15 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     private String LAYER_ID = "LAYER_ID";
     private List<Feature> symbolLayerIconFeatureList = new ArrayList<>();
     private List<LatLng> coordinatesList = new ArrayList<>();
-    List<Marker> markers = new ArrayList<>();
+//    List<Marker> markers = new ArrayList<>();
 
+    public static int proximityThreshold = 100;
+    public static int currentStopIndex = 0;
 
-    double maxLat = -90;
-    double maxLng = -180;
-    double minLat = 90;
-    double minLng = 180;
+//    double maxLat = -90;
+//    double maxLng = -180;
+//    double minLat = 90;
+//    double minLng = 180;
 
 
     private BroadcastReceiver appTimerReceiver = new BroadcastReceiver() {
@@ -127,6 +130,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentDriverMapBinding.inflate(inflater, container, false);
+        _binding = binding;
         return binding.getRoot();
     }
 
@@ -218,7 +222,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
                         .build();
 
                 // Draw the route on the map
-                directionsClient.enqueueCall(new Callback<DirectionsResponse>() {
+                directionsClient.enqueueCall(new Callback<>() {
                     @SuppressLint("MissingPermission")
                     @Override
                     public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
@@ -228,6 +232,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
                             drawRouteOnMap(style, route);
 //
                             initLocationService(style);
+
 
 //                            LocationComponent locationComponent = mapboxMap.getLocationComponent();
 //                            locationComponent.activateLocationComponent(requireActivity(), style);
@@ -290,7 +295,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
 
         style.addLayer(new LineLayer("route-layer", "route-source").withProperties(
                 PropertyFactory.lineColor(Color.RED),
-                PropertyFactory.lineWidth(5f)
+                PropertyFactory.lineWidth(3f)
         ));
     }
 
@@ -314,7 +319,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
     }
 
     @SuppressLint("MissingPermission")
-    private void initLocationService(Style loadedMapStyle){
+    private void initLocationService(Style loadedMapStyle) {
         LocationComponentOptions customLocationComponentOptions = LocationComponentOptions.builder(requireActivity())
 //                    .pulseEnabled(true)
                 .foregroundDrawable(R.drawable.abc)
@@ -337,6 +342,7 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         locationComponent.setLocationComponentEnabled(true);
         locationComponent.setCameraMode(CameraMode.TRACKING);
         locationComponent.setRenderMode(RenderMode.NORMAL);
+
 
     }
 
@@ -390,5 +396,39 @@ public class MapDriver extends BaseFragment implements OnMapReadyCallback, Permi
         LocalBroadcastManager.getInstance(requireActivity()).unregisterReceiver(appTimerReceiver);
 
         super.onDestroy();
+    }
+
+
+    public static void checkProximityToStops(Location location) {
+        if (stopsList != null && stopsList.getData() != null) {
+            LatLng busLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+            List<StopX> stop = stopsList.getData().getStop_list();
+
+            double distanceToCurrentStop = busLatLng.distanceTo(new LatLng(Double.parseDouble(stop.get(currentStopIndex).getLat()), Double.parseDouble(stop.get(currentStopIndex).getLng())));
+
+            if (distanceToCurrentStop < proximityThreshold) {
+                // Notify the user that the bus has reached the current stop
+//            showNotification("Bus has reached Stop " + (currentStopIndex + 1));
+                _binding.tvRouteTitle.setText(stop.get(currentStopIndex + 1).getStop_title());
+
+                // Move to the next stop
+                currentStopIndex++;
+
+                if (currentStopIndex < stop.size()) {
+                    // Update the route to the next stop
+//                updateRoute(busLatLng, coordinatesList.get(currentStopIndex));
+
+                } else {
+                    // The bus has reached the last stop, perform any final actions
+//                showNotification("Bus has reached the final stop.");
+                    _binding.tvRouteTitle.setText(stop.get(currentStopIndex - 1).getStop_title());
+                }
+            } else {
+                Log.e("mTAG", "proximity location working");
+            }
+        }else {
+            Log.e("mTAG", "data is null");
+        }
     }
 }
