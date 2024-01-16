@@ -7,7 +7,11 @@ import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.navigation.NavController
 import com.app.drivertracking.R
+import com.app.drivertracking.data.cache.AppPreference
+import com.app.drivertracking.data.models.response.success.GetDriverAuth
 import com.app.drivertracking.databinding.FragmentGetStarted01Binding
+import com.app.drivertracking.presentation.utils.Constants
+import com.app.drivertracking.presentation.utils.Converter
 
 class GetStarted01 : BaseFragment() {
 
@@ -42,8 +46,18 @@ class GetStarted01 : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val jsonData = AppPreference.getString(Constants.DRIVER_AUTH.name)
+        if (jsonData.isNotEmpty()) {
+            val auth = Converter.fromJson(jsonData, GetDriverAuth::class.java)
+            navController.navigate(R.id.home2, Bundle(), navOptions())
+        } else {
+
+//            navController.navigate(R.id.action_getStarted03_to_auth)
+
+        }
+
         binding.buttonGetStarted.setOnClickListener {
-            navController.navigate(R.id.action_getStarted01_to_getStarted02)
+            navController.navigate(R.id.action_getStarted01_to_getStarted02, Bundle(), navOptions())
 
         }
     }

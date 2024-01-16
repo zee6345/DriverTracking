@@ -31,7 +31,7 @@ class GetStarted02 : BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.buttonGetStarted.setOnClickListener {
-            navController.navigate(R.id.action_getStarted02_to_getStarted03)
+            navController.navigate(R.id.action_getStarted02_to_getStarted03, Bundle(), navOptions())
         }
     }
 }

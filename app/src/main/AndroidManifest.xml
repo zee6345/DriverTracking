@@ -14,12 +14,14 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.DriverTracking"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
-
+        <activity
+            android:name=".presentation.views.activities.TempActivity"
+            android:exported="false" />
         <activity
             android:name=".presentation.views.activities.MainActivity"
             android:exported="true">
@@ -29,16 +31,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".presentation.views.activities.EmptyAcivity"
+            android:exported="false" />
 
         <service
             android:name=".app.AppService"
             android:exported="false" />
-
-        <service android:name=".app.LocationUpdateService"
-            android:exported="false"
+        <service
+            android:name=".app.LocationUpdateService"
+            android:directBootAware="true"
             android:enabled="true"
-            android:directBootAware="true"/>
-
+            android:exported="false" />
     </application>
 
 </manifest>

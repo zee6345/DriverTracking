@@ -32,6 +32,7 @@ import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.presentation.utils.Progress
 import com.app.drivertracking.presentation.utils.SharedModel
 import com.app.drivertracking.presentation.viewmodel.AppViewModel
+import com.app.drivertracking.presentation.views.activities.EmptyAcivity
 
 
 private val TAG = Home::class.simpleName.toString()
@@ -241,7 +242,12 @@ class Home : BaseFragment() {
 
                     if (stops.data.stop_list.isNotEmpty()) {
                         if (!isAlreadyRoute) {
-                            navController.navigate(R.id.action_home2_to_driverMap)
+
+//                            navController.navigate(R.id.action_home2_to_driverMap)
+                            navController.navigate(R.id.action_home2_to_navigationMap)
+
+//                            startActivity(Intent(requireActivity(), EmptyAcivity::class.java))
+
                         }
                     } else {
                         Toast.makeText(
@@ -269,7 +275,6 @@ class Home : BaseFragment() {
     }
 
     override fun onDestroy() {
-
 
         // Unregister the BroadcastReceiver when it's no longer needed
         LocalBroadcastManager.getInstance(requireActivity()).unregisterReceiver(appTimerReceiver);

@@ -26,18 +26,20 @@ import com.app.drivertracking.data.api.ApiService
 import com.app.drivertracking.data.cache.AppPreference
 import com.app.drivertracking.data.models.request.GetAddLocationResponse
 import com.app.drivertracking.data.models.response.success.GetRouteStopList
+import com.app.drivertracking.data.models.response.success.StopX
 import com.app.drivertracking.presentation.utils.Constants
 import com.app.drivertracking.presentation.utils.Converter
 import com.app.drivertracking.presentation.utils.LocationService
 import com.app.drivertracking.presentation.utils.Network
 import com.app.drivertracking.presentation.views.activities.MainActivity
-import com.app.drivertracking.presentation.views.fragments.MapDriver
+//import com.app.drivertracking.presentation.views.fragments.MapDriver
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+//import com.mapbox.mapboxsdk.geometry.LatLng
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -152,8 +154,6 @@ class AppService : Service() {
         locationService.setLocationCallback(locationCallback)
 
         // Check location settings and request updates if needed
-
-        // Check location settings and request updates if needed
         locationService.checkLocationSettings(
             { location ->
                 // Location settings are satisfied, and you can request location updates here
@@ -218,8 +218,7 @@ class AppService : Service() {
         if (Network.isNetworkConnected(this)) {
 
             //proximity
-            MapDriver.checkProximityToStops(location)
-
+//            MapDriver.checkProximityToStops(location)
 
 
             val apiServices = ApiClient.createService().create(ApiService::class.java)
@@ -260,6 +259,7 @@ class AppService : Service() {
             Log.e("mmTAG", "No network connection")
         }
     }
+
 
 
     private fun stopLocationUpdates() {

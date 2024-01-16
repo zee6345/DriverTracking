@@ -25,5 +25,8 @@ dependencyResolutionManagement {
         }
     }
 }
+
+
+
 rootProject.name = "drivertracking"
 include ':app'

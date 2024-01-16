@@ -8,7 +8,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
+import com.app.drivertracking.R
 import com.app.drivertracking.presentation.utils.SharedModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -36,4 +38,15 @@ abstract class BaseFragment : Fragment() {
         initNavigation(navController)
 
     }
+
+
+    fun navOptions(): NavOptions {
+        return NavOptions.Builder()
+            .setEnterAnim(R.anim.slide_in)
+            .setExitAnim(R.anim.slide_out)
+//            .setPopEnterAnim(com.app.bustracking.R.anim.slide_in)
+//            .setPopExitAnim(com.app.bustracking.R.anim.slide_out)
+            .build()
+    }
+
 }

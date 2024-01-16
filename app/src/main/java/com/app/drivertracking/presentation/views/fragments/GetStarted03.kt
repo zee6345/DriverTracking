@@ -42,7 +42,7 @@ class GetStarted03 : BaseFragment() {
             if (jsonData.isNotEmpty()) {
 
                 val auth = Converter.fromJson(jsonData, GetDriverAuth::class.java)
-                navController.navigate(R.id.home2)
+                navController.navigate(R.id.home2, Bundle(), navOptions())
 
             } else {
 

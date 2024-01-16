@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.app.drivertracking.app.AppService
+import com.app.drivertracking.app.LocationUpdateService
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -52,13 +53,13 @@ abstract class BaseActivity : AppCompatActivity()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN;
+//        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(Intent(this, AppService::class.java))
-        } else {
-            startService(Intent(this, AppService::class.java))
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            startForegroundService(Intent(this, AppService::class.java))
+//        } else {
+//            startService(Intent(this, AppService::class.java))
+//        }
 
 
 //        pusher.connect(this, ConnectionState.ALL)
@@ -153,6 +154,15 @@ abstract class BaseActivity : AppCompatActivity()
             }
         }
 
+    }
+
+    override fun onDestroy() {
+
+        //destroy service when app closed
+        val locationUpdateServices = Intent(this@BaseActivity, LocationUpdateService::class.java)
+        stopService(locationUpdateServices)
+
+        super.onDestroy()
     }
 
 

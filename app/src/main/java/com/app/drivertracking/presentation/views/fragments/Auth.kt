@@ -57,8 +57,6 @@ class Auth : BaseFragment() {
         }
 
         binding.buttonLogin.setOnClickListener {
-//            val busNumber = binding.etBusNumber.text.toString()
-
             val number = binding.etBusNumber.text.toString().trim()
             val code = binding.ccp.selectedCountryCode.toString().trim()
 
@@ -66,7 +64,6 @@ class Auth : BaseFragment() {
                 auth.driverAuth(DriverAuthRequest("+$code $number"))
             } else {
                 binding.etBusNumber.error = "Please add your number!"
-//                showError()
             }
         }
 
